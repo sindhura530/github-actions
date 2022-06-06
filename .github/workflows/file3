@@ -1,110 +1,67 @@
-name: Check all English links
+name: 'Link Checker: All English'
 
-# **What it does**: This script once a day checks all English links and reports in issues.
-# **Why we have it**: We want to know if any links break.
+# **What it does**: Renders the content of every page and check all internal links.
+# **Why we have it**: To make sure all links connect correctly.
 # **Who does it impact**: Docs content.
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '40 19 * * *' # once a day at 19:40 UTC / 11:40 PST
+  push:
+    branches:
+      - main
+  pull_request:
 
 permissions:
   contents: read
-  issues: write
+  # Needed for the 'trilom/file-changes-action' action
+  pull-requests: read
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
 
 jobs:
-  check_all_english_links:
-    name: Check all links
-    if: github.repository == 'github/docs-internal'
-    runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.DOCUBOT_READORG_REPO_WORKFLOW_SCOPES }}
-      FIRST_RESPONDER_PROJECT: Docs content first responder
-      REPORT_AUTHOR: docubot
-      REPORT_LABEL: broken link report
-      REPORT_REPOSITORY: github/docs-content
+  check-links:
+    runs-on: ${{ fromJSON('["ubuntu-latest", "self-hosted"]')[github.repository == 'github/docs-internal'] }}
     steps:
-      - name: Check out repo's default branch
+      - name: Checkout
         uses: actions/checkout@v2
-      - name: Setup Node
+
+      - name: Setup node
         uses: actions/setup-node@v2
         with:
           node-version: 16.13.x
           cache: npm
-      - name: npm ci
+
+      - name: Install
         run: npm ci
-      - name: npm run build
-        run: npm run build
-      - name: Run script
-        run: |
-          script/check-english-links.js > broken_links.md
 
-      # check-english-links.js returns 0 if no links are broken, and 1 if any links
-      # are broken. When an Actions step's exit code is 1, the action run's job status
-      # is failure and the run ends. The following steps create an issue for the
-      # broken link report only if any links are broken, so `if: ${{ failure() }}`
-      # ensures the steps run despite the previous step's failure of the job.
-
-      - if: ${{ failure() }}
-        name: Get title for issue
-        id: check
-        run: echo "::set-output name=title::$(head -1 broken_links.md)"
-      - if: ${{ failure() }}
-        name: Create issue from file
-        id: broken-link-report
-        uses: peter-evans/create-issue-from-file@b4f9ee0a9d4abbfc6986601d9b1a4f8f8e74c77e
+      # Creates file "$/files.json", among others
+      - name: Gather files changed
+        uses: trilom/file-changes-action@a6ca26c14274c33b15e6499323aac178af06ad4b
         with:
-          token: ${{ env.GITHUB_TOKEN }}
+          fileOutput: 'json'
 
-          title: ${{ steps.check.outputs.title }}
-          content-filepath: ./broken_links.md
-          repository: ${{ env.REPORT_REPOSITORY }}
-          labels: ${{ env.REPORT_LABEL }}
-      - if: ${{ failure() }}
-        name: Close and/or comment on old issues
-        env:
-          NEW_REPORT_URL: 'https://github.com/${{ env.REPORT_REPOSITORY }}/issues/${{ steps.broken-link-report.outputs.issue-number }}'
+      # For verification
+      - name: Show files changed
+        run: cat $HOME/files.json
+
+      - name: Link check (warnings, changed files)
         run: |
-          gh alias set list-reports "issue list \
-                                       --repo ${{ env.REPORT_REPOSITORY }} \
-                                       --author ${{ env.REPORT_AUTHOR }} \
-                                       --label '${{ env.REPORT_LABEL }}'"
+          ./script/rendered-content-link-checker.mjs \
+            --language en \
+            --max 100 \
+            --check-anchors \
+            --check-images \
+            --verbose \
+            --list $HOME/files.json
 
-          # Link to the previous report from the new report that triggered this
-          # workflow run.
-
-          previous_report_url=$(gh list-reports \
-                                  --state all \
-                                  --limit 2 \
-                                  --json url \
-                                  --jq '.[].url' \
-                                  | grep -v ${{ env.NEW_REPORT_URL }} | head -1)
-
-          gh issue comment ${{ env.NEW_REPORT_URL }} --body "⬅️ [Previous report]($previous_report_url)"
-
-          # If an old report is open and assigned to someone, link to the newer
-          # report without closing the old report.
-
-          for issue_url in $(gh list-reports \
-                                  --json assignees,url \
-                                  --jq '.[] | select (.assignees != []) | .url'); do
-            if [ "$issue_url" != "${{ env.NEW_REPORT_URL }}" ]; then
-              gh issue comment $issue_url --body "➡️ [Newer report](${{ env.NEW_REPORT_URL }})"
-            fi
-          done
-
-          # Link to the newer report from any older report that is still open,
-          # then close the older report and remove it from the first responder's
-          # project board.
-
-          for issue_url in $(gh list-reports \
-                                  --search 'no:assignee' \
-                                  --json url \
-                                  --jq '.[].url'); do
-            if [ "$issue_url" != "${{ env.NEW_REPORT_URL }}" ]; then
-              gh issue comment $issue_url --body "➡️ [Newer report](${{ env.NEW_REPORT_URL }})"
-              gh issue close $issue_url
-              gh issue edit $issue_url --remove-project "${{ env.FIRST_RESPONDER_PROJECT }}"
-            fi
-          done
+      - name: Link check (critical, all files)
+        run: |
+          ./script/rendered-content-link-checker.mjs \
+            --language en \
+            --exit \
+            --verbose \
+            --check-images \
+            --level critical
