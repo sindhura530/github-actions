@@ -10,8 +10,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       name: checkout
-      name: Run the Action
-      uses: devops-infra/action-pull-request@v0.5.0
+      
+    - uses: devops-infra/action-pull-request@v0.5.0
       name: pull-request from feature to develop
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
