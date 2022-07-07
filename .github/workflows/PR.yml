@@ -11,16 +11,16 @@ jobs:
     - uses: actions/checkout@v2
       name: checkout
       
-    - uses: devops-infra/action-pull-request@v0.5.0
-      name: pull-request from feature to develop
+    - name: Raise PR 
+      uses: peter-evans/create-pull-request@v3
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        source_branch: feature
-        target_branch: develop
-        title: My pull request
-        template: .github/PULL_REQUEST_TEMPLATE.md
-        body: "**Automated pull request**"
-        label: enhancement
-        milestone: My milestone
-       
+          branch: "develop"
+          base: feature
+          title: "auto PR from feature into develop"
+          committer: ${{ env.GIT_COMMIT_AUTHOR_NAME }} <${{ env.GIT_COMMIT_AUTHOR_EMAIL }}">
+          author: ${{ env.GIT_COMMIT_AUTHOR_NAME }} <${{ env.GIT_COMMIT_AUTHOR_EMAIL }}">
+          body:
+            PR creation
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
      
