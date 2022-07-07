@@ -1,0 +1,26 @@
+name: Auto-PR
+on:
+  push:
+    branches: ['feature']
+
+jobs:
+  pull-request:
+    name: Open PR to main
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      name: checkout
+      name: Run the Action
+      uses: devops-infra/action-pull-request@v0.5.0
+      name: pull-request from feature to develop
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        source_branch: feature
+        target_branch: develop
+        title: My pull request
+        template: .github/PULL_REQUEST_TEMPLATE.md
+        body: "**Automated pull request**"
+        label: enhancement
+        milestone: My milestone
+       
+     
