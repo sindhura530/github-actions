@@ -1,6 +1,6 @@
 on:
   push:
-    branches: create-pull-request/patch
+    branches: feature
     
 name: create-pull-request workflow
 jobs:
