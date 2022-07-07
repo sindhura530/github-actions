@@ -8,8 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Run the Action
-        uses: devops-infra/action-pull-request@v0.5.0
+        name: Run the Action
+
+      - uses: devops-infra/action-pull-request@v0.5.0
+        name: PR
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           source_branch: feature
