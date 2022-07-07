@@ -1,6 +1,6 @@
 on:
   push:
-    branches: feature
+    branches: create-pull-request/patch
     
 name: create-pull-request workflow
 jobs:
@@ -14,6 +14,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
         with:
+          branch: main
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: Add report file
           title: '[Example] Add report file'
