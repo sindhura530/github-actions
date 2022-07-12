@@ -7,7 +7,7 @@ jobs:
    job1:
       runs-on: ubuntu-latest
       container:
-        image: hub.docker.com/r/antviosona/jdk11node10
+        image: ghcr.io/sindhu530/nodejs:latest
         credentials:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
