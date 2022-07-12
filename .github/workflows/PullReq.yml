@@ -4,15 +4,14 @@
   push:
     branches: [feature]
   
-jobs:
-  Deploy_Dev:
-    if: ${{ always() && github.event.ref == 'refs/heads/feature' }}
-    needs: [Quality-Gates]
-    runs-on: ubuntu-latest
-    environment: 
-      name: Development 
-      url: sindhura530/github-workflows@feature
-    steps:
+ jobs:
+ 
+   Deploy_Dev:
+     
+     runs-on: ubuntu-latest
+     
+       
+     steps:
       - name: deploying 
         run: |
              echo " **************************************** "
