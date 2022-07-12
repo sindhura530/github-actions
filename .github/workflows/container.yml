@@ -9,7 +9,7 @@ jobs:
       container:
         image: hub.docker.com/r/antviosona/jdk11node10
         credentials:
-          username: ${{ github.actor }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
           
       steps:
