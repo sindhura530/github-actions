@@ -11,6 +11,10 @@ jobs:
         credentials:
           username: ${{ github.actor }}
           password: ${{ secrets.github_token }}
+          
+      steps:
+        - name: printing
+          run: echo "hi"
 
       
 
