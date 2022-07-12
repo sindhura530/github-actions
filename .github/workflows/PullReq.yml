@@ -1,0 +1,41 @@
+ name: PReq
+ 
+ on:
+  push:
+    branches: [feature]
+  
+jobs:
+  Deploy_Dev:
+    if: ${{ always() && github.event.ref == 'refs/heads/feature' }}
+    needs: [Quality-Gates]
+    runs-on: ubuntu-latest
+    environment: 
+      name: Development 
+      url: sindhura530/github-workflows@feature
+    steps:
+      - name: deploying 
+        run: |
+             echo " **************************************** "
+             echo " dev deployment Finished: SUCCESS "
+             echo " **************************************** "
+      - name: checking out code
+        uses: actions/checkout@v2
+        
+      - name: extract git commit data
+        uses: rlespinasse/git-commit-data-action@v1.x
+
+      - name: Update author information
+        run: echo ${{ env.GIT_COMMIT_AUTHOR_NAME }} > AUTHOR
+     
+
+      - name: Automatically Create Pull Requests
+        uses: BaharaJr/create-pr@0.0.1
+        with:
+          branch: "develop"
+          base: feature
+          title: "auto PR from ${{ github.ref }} into develop"
+          committer: ${{ env.GIT_COMMIT_AUTHOR_NAME }} <${{ env.GIT_COMMIT_AUTHOR_EMAIL }}">
+          author: ${{ env.GIT_COMMIT_AUTHOR_NAME }} <${{ env.GIT_COMMIT_AUTHOR_EMAIL }}">
+          body:
+            PR creation
+          token: ${{ secrets.GITHUB_TOKEN }}
